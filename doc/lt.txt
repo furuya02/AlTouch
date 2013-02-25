@@ -1,0 +1,28 @@
+◆ホスティングプロセスの無効
+
+◆マウスドラッグの判定
+画面端から始まったドラッグはスワイプ開始ー＞ジェスチャ判定－＞成立
+ただし、Y==0の場合、プロセス破棄の可能性があるため、スワイプ・スライドの処理は実施しない
+画面端以外から始まった場合は、スライド開始
+
+◆システムマウスカーソルの変更
+
+シュミレータを使用するとマウスモード　タッチモードのどちらかを選ばなければならない
+どちらも便利に使用したい
+
+
+
+Windows ロゴ キー + [Ctrl] + [Tab]
+スイッチャー表示
+
+http://www.pc-koubou.jp/windows8/sc.php
+
+Windows ロゴ キー + ＋(プラス)キー	Windows 8	拡大
+Windows ロゴ キー + －(マイナス)キー	Windows 8	縮小
+
+
+List<WindowsInput.VirtualKeyCode> modifierKeyCodes = new List<WindowsInput.VirtualKeyCode>();
+modifierKeyCodes.Add(WindowsInput.VirtualKeyCode.SHIFT);
+
+List<WindowsInput.VirtualKeyCode> keyCodes = new List<WindowsInput.VirtualKeyCode>();
+WindowsInput.InputSimulator.SimulateModifiedKeyStroke(modifierKeyCodes, keyCodes);
