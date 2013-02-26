@@ -16,8 +16,10 @@ namespace AlTouch {
         HookProcDelegate _keyProc;
         readonly IntPtr _mouseHook;
         readonly IntPtr _keyHook;
-        //private bool _touchMode = false;
         private int _touchMode; //0=通常 1=スライド　2=ズーム　3=ピンチ
+
+        bool _enable = true;
+
 
         //Zoomの際にX座標をずらす為に使用する
         private readonly int _screenWodth;
@@ -28,8 +30,6 @@ namespace AlTouch {
         readonly Swipe _swipe;
         //オリジナルカーソル
         private readonly OrgCursor _cur;
-
-
 
         public Hook(ListBox listBox, int screenWidth, int screenHeight) {
             _listBox = listBox;
@@ -111,15 +111,18 @@ namespace AlTouch {
                     _cur.Change(_touchMode);
 
                     if (w == 513) {
-                        if (SwipeResult.Non == _swipe.Start(m.pt.x, m.pt.y)) {
+                        if (SwipeResult.Non == _swipe.Start(m.pt.x, m.pt.y)){
                             //スワイプの対象外のみスライドを初期化する
                             _touch = new Touch();
                             _touch.Down(m.pt.x, m.pt.y);
 
+                        } else{
+//                            _altEnable = false;//スワイプが有効になった時点でALTを無効化
                         }
 
                     } else if (w == 514) {
                         _swipe.Stop();
+                        //_altEnable = true;//スワイプが無効なった時点でALTを有効化
                         if (_touch != null) {
                             _touch.Up();
                             _touch = null;
@@ -201,8 +204,8 @@ namespace AlTouch {
         //**********************************************************************************
         // ALT押下中のみONFする場合
         //**********************************************************************************
-        //CTRL押下状態
-        //private bool _shift = false;
+        //ALT押下状態
+        private bool _alt = false;
 
         IntPtr KeyHookProc(int nCode, IntPtr wParam, IntPtr lParam) {
             var k = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
@@ -216,7 +219,25 @@ namespace AlTouch {
                 //CTRL ScanCode==29
                 //SHIFT ScanCode==42
 
-                if (wParam.ToInt32() == 0x0104 && k.scanCode == 42) {
+                if (wParam.ToInt32() == 0x0104 && k.scanCode == 56){
+                    _alt = true;
+                } else if (wParam.ToInt32() == 0x0101 && k.scanCode == 56){
+                    _alt = false;
+                }
+
+
+
+                if (_alt && wParam.ToInt32() == 0x0100 && k.scanCode == 29) {
+                    _enable = !_enable;
+                    if (!_enable) {
+                        _touchMode = 0;
+                    }
+                    _listBox.Items.Add(_enable);
+                    _cur.Change(_touchMode);
+                }
+
+
+                if (_alt && wParam.ToInt32() == 0x0104 && k.scanCode == 42) {
                     //_shift = true;//ALT+SHIFT DOWN
                     if (_touchMode == 1) {
                         _touchMode = 2; //Zoom
@@ -230,7 +251,8 @@ namespace AlTouch {
                 }
 
 
-                if (wParam.ToInt32() == 0x0104 && k.scanCode == 56) {
+
+                if (_enable && wParam.ToInt32() == 0x0104 && k.scanCode == 56) {
                     _touchMode = 1;
                     _cur.Change(_touchMode);//カーソル変更
                     //通常モードで実行中の処理をキャンセルするため
@@ -250,17 +272,19 @@ namespace AlTouch {
 
 
                 //スワイプ検出中の場合、ALTキーに関する情報をカットする
-                //if (_swipe.GetResult() != SwipeResult.Non){
-                if (_touchMode != 0) {
-                    if (k.scanCode == 56) {
-                        //入力は無効化する
-                        return (IntPtr)1;
+                //if (!_altEnable){
+                if (_enable) {
+                    if(_touchMode != 0){
+                        if (k.scanCode == 56){
+                            //入力は無効化する
+                            return (IntPtr) 1;
+                        }
                     }
                 }
 
-                if (_touchMode != 0) {
+                //if (_touchMode != 0) {
                     _listBox.Items.Add(String.Format("{0:X} Code={1} Scan={2}", wParam.ToInt32(), k.vkCode, k.scanCode));
-                }
+                //}
 
             }
             return CallNextHookEx(_keyHook, nCode, wParam, lParam);
