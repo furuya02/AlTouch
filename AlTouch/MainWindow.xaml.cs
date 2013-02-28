@@ -34,6 +34,7 @@ namespace AlTouch {
             exitItem.Click += ExitItemClick;
             _notifyIcon.ContextMenuStrip = menuStrip;
             _notifyIcon.MouseClick += NotifyIconMouseClick;
+
         }
 
         private void NotifyIconMouseClick(object sender, MouseEventArgs e) {
